@@ -1,77 +1,74 @@
-# Selenium-Script-for-Hotel-Search-Automation
 from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys  # Import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
 
-# Configure Chrome options
-options = Options()
-options.page_load_strategy = 'eager'
+# Initialize WebDriver
+service = Service(r'C:\Users\DEEKSHA SRIVASTAVA\Downloads\chromedriver-win64\chromedriver-win64\chromedriver.exe')
+driver = webdriver.Chrome(service=service)
 
-# Initialize the webdriver with options
-driver = webdriver.Chrome(options=options)
+def search_hotels():
+    try:
+        # Open the travel website
+        driver.get("https://www.makemytrip.com/hotels/")
+        driver.maximize_window()
+        time.sleep(5)  # Allow initial page load
 
-# Go to MakeMyTrip
-driver.get("https://www.makemytrip.com/")
+        # Handle the login/signup popup
+        try:
+            popup_close_button = WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable((By.CSS_SELECTOR, ".modalClose"))
+            )
+            popup_close_button.click()  # Click the close button
+            print("Popup closed successfully.")
+        except Exception as e:
+            print("No login/signup popup to close or error in closing:", e)
 
-# Maximize the window
-driver.maximize_window()
+        # Click on the city field
+        city_input = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.ID, "city"))
+        )
+        city_input.click()
 
-# Close the login popup
-try:
-    popup_close = WebDriverWait(driver, 120).until(
-        EC.element_to_be_clickable((By.CSS_SELECTOR, "li[data-cy='account'] span.chNavIcon.appendRight5"))
-    )
-    popup_close.click()
-except:
-    pass  # If popup doesn't appear, continue
+        # Enter city name
+        search_box = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, "//input[@placeholder='Enter city/ Hotel/ Area/ Building']"))
+        )
+        search_box.send_keys("Goa")
+        time.sleep(2)  # Wait for dropdown suggestions to appear
+        search_box.send_keys(Keys.ARROW_DOWN)
+        search_box.send_keys(Keys.ENTER)
 
-# Find the "Hotels" tab and click it
-hotels_tab = WebDriverWait(driver, 120).until(
-    EC.element_to_be_clickable((By.XPATH, "//span[text()='Hotels']"))
-)
-hotels_tab.click()
+        # Select check-in and check-out dates
+        time.sleep(2)
+        check_in_date = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, "//div[@aria-label='Sat Dec 16 2023']"))
+        )  # Replace with your desired date
+        check_in_date.click()
 
-# Enter city name (e.g., "New Delhi")
-city_field = WebDriverWait(driver, 120).until(
-    EC.presence_of_element_located((By.ID, "city"))
-)
-city_field.send_keys("New Delhi")
-city_field.submit()  # Submit the form
+        check_out_date = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, "//div[@aria-label='Mon Dec 18 2023']"))
+        )  # Replace with your desired date
+        check_out_date.click()
 
-# Wait for search results to load
-WebDriverWait(driver, 120).until(
-    EC.presence_of_element_located((By.CSS_SELECTOR, ".hotelCardListing"))
-)
+        # Click the search button
+        search_button = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.ID, "hsw_search_button"))
+        )
+        search_button.click()
+        time.sleep(5)  # Allow search results to load
 
-# Select the 5th hotel (index 4)
-hotel_cards = driver.find_elements(By.CSS_SELECTOR, ".hotelCardListing")
-if len(hotel_cards) >= 5:
-    hotel_cards[4].click()
-else:
-    print("Not enough hotels found.")
+        print("Hotel search automation completed successfully.")
 
-# Switch to the new tab (hotel details page)
-driver.switch_to.window(driver.window_handles[1])
+    except Exception as e:
+        print(f"An error occurred: {e}")
 
-# Wait for the room selection to load
-WebDriverWait(driver, 120).until(
-    EC.presence_of_element_located((By.CSS_SELECTOR, ".RoomBlock"))
-)
+    finally:
+        # Close the browser
+        driver.quit()
 
-# Choose the first available room
-room_blocks = driver.find_elements(By.CSS_SELECTOR, ".RoomBlock")
-if room_blocks:
-    room_blocks[0].click()
-else:
-    print("No rooms found.")
-
-# Further actions (e.g., select dates, book) can be added here
-
-# Wait for a while to see the results
-time.sleep(5)
-
-# Close the browser
-driver.quit()
+if __name__ == "__main__":
+    search_hotels()
